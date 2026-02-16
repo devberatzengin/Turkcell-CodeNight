@@ -1,43 +1,47 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Game+ Quest League — Dashboard</title>
-  <meta name="description" content="Turkcell Game+ Quest League gamification dashboard — quests, leaderboard, badges & more." />
+  <meta name="description"
+    content="Turkcell Game+ Quest League gamification dashboard — quests, leaderboard, badges & more." />
   <link rel="stylesheet" href="css/styles.css" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>" />
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>" />
 </head>
+
 <body>
 
   <!-- ═══ Navbar ═══ -->
   <nav class="navbar">
-    <div class="navbar-brand">
+    <a class="navbar-brand" href="#" onclick="navigate('dashboard');return false;" style="text-decoration:none">
       <div class="brand-icon">G+</div>
       <span>Game<span class="brand-highlight">+</span> Quest League</span>
-    </div>
+    </a>
 
     <button class="nav-toggle" aria-label="Toggle navigation">☰</button>
 
     <ul class="navbar-nav">
       <li><a href="#" data-route="dashboard" class="active">
-        <span>📊</span> Dashboard
-      </a></li>
+          <span>📊</span> Dashboard
+        </a></li>
       <li><a href="#" data-route="leaderboard">
-        <span>🏆</span> Leaderboard
-      </a></li>
+          <span>🏆</span> Leaderboard
+        </a></li>
       <li><a href="#" data-route="quests">
-        <span>⚔️</span> Quests
-      </a></li>
+          <span>⚔️</span> Quests
+        </a></li>
       <li><a href="#" data-route="rewards">
-        <span>🏅</span> Rewards
-      </a></li>
+          <span>🏅</span> Rewards
+        </a></li>
       <li><a href="#" data-route="notifications">
-        <span>🔔</span> Notifications
-      </a></li>
+          <span>🔔</span> Notifications
+        </a></li>
       <li><a href="#" data-route="whatif">
-        <span>🔮</span> What-If
-      </a></li>
+          <span>🔮</span> What-If
+        </a></li>
     </ul>
 
     <div class="navbar-profile">
@@ -54,37 +58,51 @@
 
     <!-- Dashboard -->
     <section id="section-dashboard" class="section active">
-      <div class="loading"><div class="spinner"></div>Loading dashboard…</div>
+      <div class="loading">
+        <div class="spinner"></div>Loading dashboard…
+      </div>
     </section>
 
     <!-- Leaderboard -->
     <section id="section-leaderboard" class="section">
-      <div class="loading"><div class="spinner"></div>Loading leaderboard…</div>
+      <div class="loading">
+        <div class="spinner"></div>Loading leaderboard…
+      </div>
     </section>
 
     <!-- Quests -->
     <section id="section-quests" class="section">
-      <div class="loading"><div class="spinner"></div>Loading quests…</div>
+      <div class="loading">
+        <div class="spinner"></div>Loading quests…
+      </div>
     </section>
 
     <!-- Rewards -->
     <section id="section-rewards" class="section">
-      <div class="loading"><div class="spinner"></div>Loading rewards…</div>
+      <div class="loading">
+        <div class="spinner"></div>Loading rewards…
+      </div>
     </section>
 
     <!-- Notifications -->
     <section id="section-notifications" class="section">
-      <div class="loading"><div class="spinner"></div>Loading notifications…</div>
+      <div class="loading">
+        <div class="spinner"></div>Loading notifications…
+      </div>
     </section>
 
     <!-- What-If -->
     <section id="section-whatif" class="section">
-      <div class="loading"><div class="spinner"></div>Loading simulator…</div>
+      <div class="loading">
+        <div class="spinner"></div>Loading simulator…
+      </div>
     </section>
 
     <!-- User Detail -->
     <section id="section-userDetail" class="section">
-      <div class="loading"><div class="spinner"></div>Loading user detail…</div>
+      <div class="loading">
+        <div class="spinner"></div>Loading user detail…
+      </div>
     </section>
 
   </main>
@@ -96,4 +114,5 @@
   <script src="js/api.js"></script>
   <script src="js/app.js"></script>
 </body>
+
 </html>
