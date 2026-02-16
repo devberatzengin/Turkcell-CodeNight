@@ -7,9 +7,6 @@ class UserState(Base):
     __tablename__ = "user_state"
 
     user_id = Column(String(10), ForeignKey("users.user_id"), primary_key=True)
-    name = Column(String(100))
-    city = Column(String(100))
-    segment = Column(String(50))
     login_count_today = Column(Integer, default=0)
     play_minutes_today = Column(Integer, default=0)
     pvp_wins_today = Column(Integer, default=0)
@@ -19,6 +16,5 @@ class UserState(Base):
     topup_try_7d = Column(Integer, default=0)
     logins_7d = Column(Integer, default=0)
     login_streak_days = Column(Integer, default=0)
-    total_points = Column(Integer, default=0)
 
     user = relationship("User")

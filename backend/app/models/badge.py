@@ -9,3 +9,5 @@ class Badge(Base):
     badge_name = Column(String(100), nullable=False)
     condition = Column(String(255))
     level = Column(Integer)
+    threshold_points = Column(Integer)
+

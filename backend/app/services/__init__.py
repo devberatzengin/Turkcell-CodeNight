@@ -1,3 +1,4 @@
-"""Services package: add business logic modules here (state, quest engine, pipeline)."""
+"""Services package: business logic modules (pipeline, ingest, whatif)."""
 
-__all__ = ["pipeline", "state", "quest_engine"]
+__all__ = ["pipeline", "ingest", "whatif"]
+

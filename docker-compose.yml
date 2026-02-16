@@ -12,9 +12,9 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./gamification_database.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./databaseScript/gamification_database.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -42,6 +42,7 @@ services:
 
 volumes:
   postgres_data:
+
 
 networks:
   gamification_network:

@@ -1,10 +1,20 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 
-from .controllers import users, quests, awards, db_status, pipeline, leaderboard, notifications, user_state, badge_awards
+from .controllers import users, quests, awards, db_status, pipeline, leaderboard, notifications, user_state, badge_awards, whatif
 
 app = FastAPI(title="Game+ Quest League API (backend)")
+
+# CORS — allow frontend on any origin during development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Serve static files (dashboard)
 static_dir = os.path.join(os.path.dirname(__file__), 'static')
@@ -19,6 +29,7 @@ app.include_router(leaderboard.router, prefix="/leaderboard", tags=["leaderboard
 app.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
 app.include_router(user_state.router, prefix="/user_state", tags=["user_state"])
 app.include_router(badge_awards.router, prefix="/badge_awards", tags=["badge_awards"])
+app.include_router(whatif.router, prefix="/whatif", tags=["whatif"])
 
 @app.get("/")
 def root():
@@ -27,3 +38,4 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "ok"}
+

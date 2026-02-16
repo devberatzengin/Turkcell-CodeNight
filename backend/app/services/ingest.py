@@ -1,6 +1,5 @@
 import os
 from sqlalchemy import text
-from . import pipeline as _p
 from .. import db
 
 
@@ -14,8 +13,8 @@ def _create_staging_like(conn, table_name):
 
 
 def _copy_csv_to_staging(conn, table_name, csv_path, columns):
-    # Use raw connection COPY for performance
-    raw = conn.connection
+    # Use raw DBAPI connection COPY for performance (SQLAlchemy 2.x compatible)
+    raw = conn.connection.dbapi_connection
     cur = raw.cursor()
     cols = ",".join(columns)
     sql = f"COPY staging.{table_name} ({cols}) FROM STDIN WITH CSV HEADER"

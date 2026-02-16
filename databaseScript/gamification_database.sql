@@ -1,4 +1,4 @@
-1st SCRIPT
+-- 1st SCRIPT
 
 
 -- ============================================
@@ -81,7 +81,7 @@ CREATE TABLE user_state (
 
 -- Activity events table
 CREATE TABLE activity_events (
-    event_id VARCHAR(10) PRIMARY KEY,
+    event_id VARCHAR(50) PRIMARY KEY,
     user_id VARCHAR(10) NOT NULL,
     date DATE NOT NULL,
     game_id VARCHAR(10),
@@ -106,7 +106,7 @@ CREATE TABLE badge_awards (
 
 -- Quest awards table
 CREATE TABLE quest_awards (
-    award_id VARCHAR(10) PRIMARY KEY,
+    award_id VARCHAR(50) PRIMARY KEY,
     user_id VARCHAR(10) NOT NULL,
     as_of_date DATE NOT NULL,
     triggered_quests TEXT,
@@ -120,11 +120,11 @@ CREATE TABLE quest_awards (
 
 -- Points ledger table
 CREATE TABLE points_ledger (
-    ledger_id VARCHAR(10) PRIMARY KEY,
+    ledger_id VARCHAR(50) PRIMARY KEY,
     user_id VARCHAR(10) NOT NULL,
     points_delta INTEGER NOT NULL,
     source VARCHAR(50),
-    source_ref VARCHAR(50),
+    source_ref VARCHAR(50),  -- references quest_awards.award_id
     created_at TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (source_ref) REFERENCES quest_awards(award_id) ON DELETE SET NULL
@@ -151,7 +151,7 @@ CREATE TABLE leaderboard (
 
 -- Notifications table
 CREATE TABLE notifications (
-    notification_id VARCHAR(10) PRIMARY KEY,
+    notification_id VARCHAR(50) PRIMARY KEY,
     user_id VARCHAR(10) NOT NULL,
     channel VARCHAR(50),
     message TEXT,
@@ -288,7 +288,7 @@ COMMIT;
 
 
 
-2nd SCRIPT
+-- 2nd SCRIPT
 
 
 
@@ -325,7 +325,7 @@ DROP COLUMN IF EXISTS suppressed_quests;
 
 -- Quest award relation tablosu oluştur
 CREATE TABLE IF NOT EXISTS quest_award_quests (
-    award_id VARCHAR(10) NOT NULL REFERENCES quest_awards(award_id) ON DELETE CASCADE,
+    award_id VARCHAR(50) NOT NULL REFERENCES quest_awards(award_id) ON DELETE CASCADE,
     quest_id VARCHAR(10) NOT NULL REFERENCES quests(quest_id) ON DELETE CASCADE,
     status VARCHAR(20) NOT NULL CHECK (status IN ('TRIGGERED','SUPPRESSED')),
     PRIMARY KEY (award_id, quest_id)
@@ -369,7 +369,7 @@ COMMIT;
 
 
 
-3rd SCRIPT
+-- 3rd SCRIPT
 
 
 

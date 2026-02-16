@@ -121,8 +121,8 @@ class TestStateCalculation:
         df['date'] = pd.to_datetime(df['date']).dt.date
 
         state = _compute_user_state_from_events(df, today)
-        # Should only count 1 (today's login)
-        assert state[state['user_id'] == 'U1']['login_streak_days'].values[0] == 1
+        # Streak counts consecutive days from today backwards: today ✓, yesterday ✓, day-2 missing → streak = 2
+        assert state[state['user_id'] == 'U1']['login_streak_days'].values[0] == 2
 
 
 if __name__ == '__main__':

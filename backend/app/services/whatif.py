@@ -34,18 +34,24 @@ def simulate_metrics(user_id: str, metric_deltas: Dict[str, int], as_of_date: da
 
     engine = db.engine
     with engine.connect() as conn:
-        # Get current user state
-        state_row = conn.execute(text('SELECT * FROM user_state WHERE user_id = :u'), {'u': user_id}).fetchone()
+        # Get current user state + total_points from leaderboard_view
+        state_row = conn.execute(text('''
+            SELECT us.*, COALESCE(lv.total_points, 0) AS total_points
+            FROM user_state us
+            LEFT JOIN leaderboard_view lv ON us.user_id = lv.user_id
+            WHERE us.user_id = :u
+        '''), {'u': user_id}).fetchone()
         if not state_row:
             return {"error": f"User {user_id} not found"}
 
-        state_dict = dict(state_row)
+        state_dict = dict(state_row._mapping)
 
         # Load all active quests
-        quests = conn.execute(text('SELECT * FROM quests WHERE is_active = true')).fetchall()
+        quests_rows = conn.execute(text('SELECT * FROM quests WHERE is_active = true')).fetchall()
+        quests = [dict(q._mapping) for q in quests_rows]
 
     # Build current context
-    current_ctx = {k: int(v) for k, v in state_dict.items() if k != 'user_id'}
+    current_ctx = {k: int(v) for k, v in state_dict.items() if k != 'user_id' and isinstance(v, (int, float))}
 
     # Build simulated context (apply deltas)
     simulated_ctx = current_ctx.copy()
