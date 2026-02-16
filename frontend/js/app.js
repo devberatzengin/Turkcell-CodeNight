@@ -186,7 +186,34 @@ async function handleLogin(event) {
         if (avatarEl) avatarEl.textContent = (user.name|| user.user_id).charAt(0).toUpperCase();
 
         showToast(`Giriş yapıldı: ${user.name}`, 'success');
+        
+        // Navigate to dashboard first (immediate visual feedback)
         navigate('dashboard');
+        
+        // Record login activity and refresh dashboard data (don't wait)
+        console.log('[LOGIN] Calling recordLogin for', user.user_id);
+        api.recordLogin(user.user_id).then(res => {
+            console.log('[LOGIN] recordLogin response:', res);
+            if (res && res.status === 'success') {
+                showToast(res.message || 'Giriş kaydedildi', 'success');
+                console.log('[LOGIN] Calling runPipeline');
+                // Trigger pipeline to update metrics
+                return api.runPipeline(null, true);
+            }
+            return null;
+        }).then(res => {
+            console.log('[LOGIN] Pipeline response:', res);
+            // Pipeline done, refresh dashboard
+            if (res && (res.status === 'success' || res.status === 'completed')) {
+                console.log('[LOGIN] Refreshing dashboard');
+                setTimeout(() => renderDashboard(), 500);
+            }
+        }).catch(err => {
+            console.error('[LOGIN] Error:', err);
+            showToast(`Hata: ${err.message}`, 'error');
+            // Still refresh dashboard even on error
+            setTimeout(() => renderDashboard(), 500);
+        });
     } catch (err) {
         showToast(`Hata: ${err.message}`, 'error');
     }
@@ -394,6 +421,7 @@ async function renderQuests() {
     quests.forEach((q, i) => {
       const typeCls = typeLabelMap[q.quest_type] || 'system';
       const isActive = q.is_active;
+      const earnBtnDisabled = !currentUserId;
       cardsHTML += `
         <div class="quest-card" style="animation: slideUp 0.4s ease ${0.08 * i}s both">
           ${isActive ? '<div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--blue-400),var(--yellow-500))"></div>' : ''}
@@ -409,6 +437,14 @@ async function renderQuests() {
             <div class="quest-reward">⭐ ${q.reward_points || 0} pts</div>
             <span class="quest-priority">Priority: ${q.priority}</span>
           </div>
+          <button 
+            class="btn btn-sm" 
+            style="width:100%;margin-top:12px;opacity:${earnBtnDisabled ? 0.5 : 1};pointer-events:${earnBtnDisabled ? 'none' : 'auto'}"
+            onclick="handleEarnQuest('${q.quest_id}', '${q.quest_name}', ${q.reward_points || 0})"
+            title="${earnBtnDisabled ? 'Login required' : 'Earn this quest'}"
+          >
+            💰 Earn
+          </button>
         </div>
       `;
     });
@@ -432,6 +468,27 @@ async function handleToggleQuest(questId) {
     renderQuests();
   } catch (err) {
     showToast(`Toggle failed: ${err.message}`, 'error');
+  }
+}
+
+async function handleEarnQuest(questId, questName, rewardPoints) {
+  if (!currentUserId) {
+    showToast('Login required to earn quests', 'warning');
+    return;
+  }
+
+  try {
+    const res = await api.earnQuest(currentUserId, questId);
+    
+    if (res.status === 'success') {
+      showToast(`🎉 ${questName} earned! +${rewardPoints} pts`, 'success');
+      // Refresh dashboard to show updated points/badges
+      renderDashboard();
+    } else {
+      showToast(`❌ ${res.message}`, 'error');
+    }
+  } catch (err) {
+    showToast(`Earn failed: ${err.message}`, 'error');
   }
 }
 

@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 
-from .controllers import users, quests, awards, db_status, pipeline, leaderboard, notifications, user_state, badge_awards, whatif
+from .controllers import users, quests, awards, db_status, pipeline, leaderboard, notifications, user_state, badge_awards, whatif, activity
 
 app = FastAPI(title="Game+ Quest League API (backend)")
 
@@ -23,6 +23,7 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(quests.router, prefix="/quests", tags=["quests"])
 app.include_router(awards.router, prefix="/awards", tags=["awards"])
+app.include_router(activity.router, prefix="/activity", tags=["activity"])
 app.include_router(db_status.router, prefix="/db", tags=["db"])
 app.include_router(pipeline.router, prefix="/pipeline", tags=["pipeline"])
 app.include_router(leaderboard.router, prefix="/leaderboard", tags=["leaderboard"])

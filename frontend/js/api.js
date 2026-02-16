@@ -40,33 +40,71 @@ const api = {
   },
 
   /* ── Users ──────────────────────────────── */
-  getUsers(limit = 100)       { return this._get(`/users?limit=${limit}`); },
-  getUserDetail(id)            { return this._get(`/users/${id}`); },
+  getUsers(limit = 100) {
+    return this._get(`/users?limit=${limit}`);
+  },
+  getUserDetail(id) {
+    return this._get(`/users/${id}`);
+  },
 
   /* ── User State ─────────────────────────── */
-  getUserStates(limit = 100)   { return this._get(`/user_state?limit=${limit}`); },
-  getUserState(id)             { return this._get(`/user_state/${id}`); },
+  getUserStates(limit = 100) {
+    return this._get(`/user_state?limit=${limit}`);
+  },
+  getUserState(id) {
+    return this._get(`/user_state/${id}`);
+  },
 
   /* ── Leaderboard ────────────────────────── */
-  getLeaderboard(limit = 10)   { return this._get(`/leaderboard?limit=${limit}`); },
+  getLeaderboard(limit = 10) {
+    return this._get(`/leaderboard?limit=${limit}`);
+  },
 
   /* ── Quests ─────────────────────────────── */
-  getQuests(activeOnly = false) { return this._get(`/quests?active_only=${activeOnly}`); },
-  getQuest(id)                {  return this._get(`/quests/${id}`); },
-  updateQuest(id, body)       {  return this._put(`/quests/${id}`, body); },
-  toggleQuest(id)             {  return this._patch(`/quests/${id}/toggle`); },
+  getQuests(activeOnly = false) {
+    return this._get(`/quests?active_only=${activeOnly}`);
+  },
+  getQuest(id) {
+    return this._get(`/quests/${id}`);
+  },
+  updateQuest(id, body) {
+    return this._put(`/quests/${id}`, body);
+  },
+  toggleQuest(id) {
+    return this._patch(`/quests/${id}/toggle`);
+  },
 
   /* ── Awards ─────────────────────────────── */
-  getAwards(limit = 100)       { return this._get(`/awards?limit=${limit}`); },
-  getUserAwards(id, limit = 50){ return this._get(`/awards/user/${id}?limit=${limit}`); },
+  getAwards(limit = 100) {
+    return this._get(`/awards?limit=${limit}`);
+  },
+  getUserAwards(id, limit = 50) {
+    return this._get(`/awards/user/${id}?limit=${limit}`);
+  },
+  earnQuest(userId, questId) {
+    return this._post(`/awards/earn?user_id=${userId}&quest_id=${questId}`, {});
+  },
+
+  /* ── Activity ────────────────────────────── */
+  recordLogin(userId) {
+    return this._post(`/activity/record-login`, { user_id: userId });
+  },
 
   /* ── Badge Awards ───────────────────────── */
-  getBadgeAwards(limit = 100)  { return this._get(`/badge_awards?limit=${limit}`); },
-  getUserBadges(id)            { return this._get(`/badge_awards/user/${id}`); },
+  getBadgeAwards(limit = 100) {
+    return this._get(`/badge_awards?limit=${limit}`);
+  },
+  getUserBadges(id) {
+    return this._get(`/badge_awards/user/${id}`);
+  },
 
   /* ── Notifications ──────────────────────── */
-  getNotifications(limit = 100){ return this._get(`/notifications?limit=${limit}`); },
-  getUserNotifications(id, lim = 50) { return this._get(`/notifications/user/${id}?limit=${lim}`); },
+  getNotifications(limit = 100) {
+    return this._get(`/notifications?limit=${limit}`);
+  },
+  getUserNotifications(id, lim = 50) {
+    return this._get(`/notifications/user/${id}?limit=${lim}`);
+  },
 
   /* ── What-If ────────────────────────────── */
   simulateWhatIf(userId, deltas) {
@@ -81,5 +119,7 @@ const api = {
   },
 
   /* ── DB Health ──────────────────────────── */
-  getHealth() { return this._get('/health'); },
+  getHealth() {
+    return this._get('/health');
+  },
 };
