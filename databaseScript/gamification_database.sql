@@ -1,3 +1,6 @@
+1st SCRIPT
+
+
 -- ============================================
 -- Gamification System Database - PostgreSQL
 -- Complete schema with relationships and data
@@ -282,3 +285,221 @@ COMMIT;
 -- Database setup completed successfully!
 -- You can now run queries against the tables.
 -- ============================================
+
+
+
+2nd SCRIPT
+
+
+
+BEGIN;
+
+-- ============================================
+-- 1️⃣ DERIVED & REDUNDANT STRUCTURE TEMİZLEME
+-- ============================================
+
+-- Leaderboard artık derived olacak → tabloyu kaldır
+DROP TABLE IF EXISTS leaderboard CASCADE;
+
+-- Quest decisions gereksiz (quest_awards zaten decision içeriyor)
+DROP TABLE IF EXISTS quest_decisions CASCADE;
+
+-- user_state içindeki total_points derived → kaldır
+ALTER TABLE user_state
+DROP COLUMN IF EXISTS total_points;
+
+-- user_state içinde name/city/segment duplicate → kaldır (users zaten tutuyor)
+ALTER TABLE user_state
+DROP COLUMN IF EXISTS name,
+DROP COLUMN IF EXISTS city,
+DROP COLUMN IF EXISTS segment;
+
+-- ============================================
+-- 2️⃣ QUEST_AWARDS NORMALİZASYONU
+-- ============================================
+
+-- triggered_quests ve suppressed_quests TEXT alanları normalize edilecek
+ALTER TABLE quest_awards
+DROP COLUMN IF EXISTS triggered_quests,
+DROP COLUMN IF EXISTS suppressed_quests;
+
+-- Quest award relation tablosu oluştur
+CREATE TABLE IF NOT EXISTS quest_award_quests (
+    award_id VARCHAR(10) NOT NULL REFERENCES quest_awards(award_id) ON DELETE CASCADE,
+    quest_id VARCHAR(10) NOT NULL REFERENCES quests(quest_id) ON DELETE CASCADE,
+    status VARCHAR(20) NOT NULL CHECK (status IN ('TRIGGERED','SUPPRESSED')),
+    PRIMARY KEY (award_id, quest_id)
+);
+
+-- ============================================
+-- 3️⃣ POINTS_LEDGER İYİLEŞTİRME
+-- ============================================
+
+-- source alanını constraint ile güvenli hale getirelim
+ALTER TABLE points_ledger
+ADD CONSTRAINT ck_points_ledger_source
+CHECK (source IN ('QUEST_REWARD','BADGE_REWARD','ADMIN'));
+
+-- ============================================
+-- 4️⃣ LEADERBOARD DERIVED VIEW
+-- ============================================
+
+CREATE OR REPLACE VIEW leaderboard_view AS
+SELECT
+    u.user_id,
+    COALESCE(SUM(pl.points_delta),0) AS total_points,
+    RANK() OVER (
+        ORDER BY COALESCE(SUM(pl.points_delta),0) DESC, u.user_id ASC
+    ) AS rank
+FROM users u
+LEFT JOIN points_ledger pl ON u.user_id = pl.user_id
+GROUP BY u.user_id;
+
+-- ============================================
+-- 5️⃣ BADGE THRESHOLD İYİLEŞTİRME (optional ama önerilir)
+-- ============================================
+
+-- Eğer badges.condition string yerine threshold kullanmak istersen:
+-- ALTER TABLE badges ADD COLUMN threshold_points INTEGER;
+-- UPDATE badges SET threshold_points = 300 WHERE badge_id = 'B-01';
+-- UPDATE badges SET threshold_points = 800 WHERE badge_id = 'B-02';
+-- UPDATE badges SET threshold_points = 1500 WHERE badge_id = 'B-03';
+
+COMMIT;
+
+
+
+3rd SCRIPT
+
+
+
+BEGIN;
+
+-- =====================================================
+-- 1️⃣ BADGE DUPLICATE ENGELLEME
+-- =====================================================
+
+ALTER TABLE badge_awards
+DROP CONSTRAINT IF EXISTS uq_user_badge;
+
+ALTER TABLE badge_awards
+ADD CONSTRAINT uq_user_badge UNIQUE (user_id, badge_id);
+
+
+-- =====================================================
+-- 2️⃣ LEDGER IMMUTABLE (UPDATE / DELETE YASAK)
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION fn_prevent_ledger_modification()
+RETURNS TRIGGER AS $$
+BEGIN
+    RAISE EXCEPTION 'Points ledger is immutable. Update/Delete not allowed.';
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_no_update_points_ledger ON points_ledger;
+CREATE TRIGGER trg_no_update_points_ledger
+BEFORE UPDATE ON points_ledger
+FOR EACH ROW
+EXECUTE FUNCTION fn_prevent_ledger_modification();
+
+DROP TRIGGER IF EXISTS trg_no_delete_points_ledger ON points_ledger;
+CREATE TRIGGER trg_no_delete_points_ledger
+BEFORE DELETE ON points_ledger
+FOR EACH ROW
+EXECUTE FUNCTION fn_prevent_ledger_modification();
+
+
+-- =====================================================
+-- 3️⃣ QUEST → LEDGER OTOMATİK INSERT
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION fn_insert_ledger_from_quest_award()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO points_ledger (
+        ledger_id,
+        user_id,
+        points_delta,
+        source,
+        source_ref,
+        created_at
+    )
+    VALUES (
+        CONCAT('L-', NEW.award_id),
+        NEW.user_id,
+        NEW.reward_points,
+        'QUEST_REWARD',
+        NEW.award_id,
+        COALESCE(NEW.timestamp, NOW())
+    );
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_quest_award_to_ledger ON quest_awards;
+CREATE TRIGGER trg_quest_award_to_ledger
+AFTER INSERT ON quest_awards
+FOR EACH ROW
+EXECUTE FUNCTION fn_insert_ledger_from_quest_award();
+
+
+-- =====================================================
+-- 4️⃣ BADGE THRESHOLD KOLONU
+-- =====================================================
+
+ALTER TABLE badges
+ADD COLUMN IF NOT EXISTS threshold_points INTEGER;
+
+UPDATE badges SET threshold_points = 300 WHERE badge_id = 'B-01';
+UPDATE badges SET threshold_points = 800 WHERE badge_id = 'B-02';
+UPDATE badges SET threshold_points = 1500 WHERE badge_id = 'B-03';
+
+
+-- =====================================================
+-- 5️⃣ LEDGER → BADGE OTOMATİK KONTROL
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION fn_check_badge_after_ledger()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_total_points INTEGER;
+    v_badge RECORD;
+BEGIN
+    -- Güncel toplam puanı ledger'dan hesapla
+    SELECT COALESCE(SUM(points_delta),0)
+    INTO v_total_points
+    FROM points_ledger
+    WHERE user_id = NEW.user_id;
+
+    -- Threshold'a göre badge kontrolü
+    FOR v_badge IN
+        SELECT badge_id, threshold_points
+        FROM badges
+        WHERE threshold_points IS NOT NULL
+    LOOP
+        IF v_total_points >= v_badge.threshold_points THEN
+            INSERT INTO badge_awards (user_id, badge_id, awarded_at)
+            SELECT NEW.user_id, v_badge.badge_id, NOW()
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM badge_awards
+                WHERE user_id = NEW.user_id
+                  AND badge_id = v_badge.badge_id
+            );
+        END IF;
+    END LOOP;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_ledger_to_badge ON points_ledger;
+CREATE TRIGGER trg_ledger_to_badge
+AFTER INSERT ON points_ledger
+FOR EACH ROW
+EXECUTE FUNCTION fn_check_badge_after_ledger();
+
+
+COMMIT;
