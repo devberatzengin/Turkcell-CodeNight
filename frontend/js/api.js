@@ -89,6 +89,18 @@ const api = {
   recordLogin(userId) {
     return this._post(`/activity/record-login`, { user_id: userId });
   },
+  recordPlay(userId, minutes) {
+    return this._post(`/activity/record-play`, { user_id: userId, minutes });
+  },
+  recordPvP(userId, wins) {
+    return this._post(`/activity/record-pvp`, { user_id: userId, wins });
+  },
+  recordCoop(userId, minutes) {
+    return this._post(`/activity/record-coop`, { user_id: userId, minutes });
+  },
+  recordTopup(userId, amount) {
+    return this._post(`/activity/record-topup`, { user_id: userId, amount });
+  },
 
   /* ── Badge Awards ───────────────────────── */
   getBadgeAwards(limit = 100) {

@@ -466,6 +466,9 @@ RETURNS TRIGGER AS $$
 DECLARE
     v_total_points INTEGER;
     v_badge RECORD;
+    v_badge_name TEXT;
+    v_notif_id TEXT;
+    v_badge_inserted BOOLEAN;
 BEGIN
     -- Güncel toplam puanı ledger'dan hesapla
     SELECT COALESCE(SUM(points_delta),0)
@@ -475,11 +478,15 @@ BEGIN
 
     -- Threshold'a göre badge kontrolü
     FOR v_badge IN
-        SELECT badge_id, threshold_points
+        SELECT badge_id, badge_name, threshold_points
         FROM badges
         WHERE threshold_points IS NOT NULL
+        ORDER BY threshold_points
     LOOP
         IF v_total_points >= v_badge.threshold_points THEN
+            -- Badge'i ekle (zaten varsa ekleme)
+            v_badge_inserted := FALSE;
+            
             INSERT INTO badge_awards (user_id, badge_id, awarded_at)
             SELECT NEW.user_id, v_badge.badge_id, NOW()
             WHERE NOT EXISTS (
@@ -488,6 +495,21 @@ BEGIN
                 WHERE user_id = NEW.user_id
                   AND badge_id = v_badge.badge_id
             );
+            
+            -- Eğer yeni badge eklendiyse bildirim gönder
+            IF FOUND THEN
+                v_badge_inserted := TRUE;
+                v_notif_id := CONCAT('N-BADGE-', substr(md5(random()::text), 1, 8), '-', NEW.user_id);
+                
+                INSERT INTO notifications (notification_id, user_id, channel, message, sent_at)
+                VALUES (
+                    v_notif_id,
+                    NEW.user_id,
+                    'BiP',
+                    CONCAT('🏆 Tebrikler! "', v_badge.badge_name, '" rozetini kazandınız! (', v_total_points, ' puan)'),
+                    NOW()
+                );
+            END IF;
         END IF;
     END LOOP;
 
