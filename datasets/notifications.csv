@@ -1,0 +1,6 @@
+notification_id,user_id,channel,message,sent_at
+N-400,U1,BiP,Kazanım: Q-02 görevi tamamlandı. +150 puan.,2026-03-12T21:00:00Z
+N-401,U2,BiP,Kazanım: Q-02 görevi tamamlandı. +150 puan.,2026-03-12T20:56:00Z
+N-402,U3,BiP,Kazanım: Q-04 görevi tamamlandı. +180 puan.,2026-03-12T20:52:00Z
+N-403,U4,BiP,Kazanım: Q-02 görevi tamamlandı. +150 puan.,2026-03-12T20:48:00Z
+N-404,U5,BiP,Kazanım: Q-03 görevi tamamlandı. +200 puan.,2026-03-12T20:44:00Z

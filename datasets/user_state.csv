@@ -1,0 +1,6 @@
+user_id,name,city,segment,login_count_today,play_minutes_today,pvp_wins_today,coop_minutes_today,topup_try_today,play_minutes_7d,topup_try_7d,logins_7d,login_streak_days,total_points
+U1,Ayşe,Istanbul,STUDENT,1,137,0,30,0,516,150,5,5,150
+U2,Ali,Ankara,STUDENT,1,64,1,13,0,376,250,5,5,150
+U3,Deniz,Izmir,STUDENT,1,82,1,87,100,342,500,5,5,180
+U4,Mert,Bursa,YOUNG_PRO,1,144,1,19,0,632,200,5,5,150
+U5,Ece,Antalya,YOUNG_PRO,1,157,4,14,0,552,100,5,5,200

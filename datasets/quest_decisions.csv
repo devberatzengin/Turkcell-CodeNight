@@ -1,0 +1,6 @@
+decision_id,user_id,as_of_date,selected_reward_points,reason,timestamp
+DQ-200,U1,2026-03-12,150,selected_quest=Q-02; priority=min,2026-03-12T21:00:00Z
+DQ-201,U2,2026-03-12,150,selected_quest=Q-02; priority=min,2026-03-12T20:56:00Z
+DQ-202,U3,2026-03-12,180,selected_quest=Q-04; priority=min,2026-03-12T20:52:00Z
+DQ-203,U4,2026-03-12,150,selected_quest=Q-02; priority=min,2026-03-12T20:48:00Z
+DQ-204,U5,2026-03-12,200,selected_quest=Q-03; priority=min,2026-03-12T20:44:00Z
