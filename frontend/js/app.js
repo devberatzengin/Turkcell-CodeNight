@@ -63,6 +63,7 @@ function showToast(message, type = 'success') {
 
 /* ── Router ───────────────────────────────── */
 const routes = {
+    login: { title: 'Login', render: renderLogin },
   dashboard: { title: 'Dashboard', render: renderDashboard },
   leaderboard: { title: 'Leaderboard', render: renderLeaderboard },
   quests: { title: 'Quests', render: renderQuests },
@@ -72,10 +73,13 @@ const routes = {
   userDetail: { title: 'User Detail', render: renderUserDetail },
 };
 
-let currentRoute = 'dashboard';
+let currentRoute = 'login';
 let currentUserId = null;
 
 function navigate(route, params) {
+    if (route !== 'login' && !currentUserId) {
+        route = 'login';
+    }
   currentRoute = route;
   if (params?.userId) currentUserId = params.userId;
 
@@ -125,12 +129,76 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  navigate('dashboard');
+  navigate('login');
 });
 
 /* ══════════════════════════════════════════════
    RENDER FUNCTIONS
    ══════════════════════════════════════════════ */
+
+/* ── Login ─────────────────────────────────── */
+async function renderLogin() {
+    const container = $('#section-login');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div style="display:flex;justify-content:center;align-items:center;height:100vh;background:linear-gradient(135deg,#0f172a,#1e293b)">
+        <div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:40px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
+          <h1 style="margin:0 0 8px;font-size:28px;font-weight:700;color:#eee">Game+</h1>
+          <p style="margin:0 0 32px;color:#94a3b8;font-size:14px">Quest League</p>
+          <form onsubmit="handleLogin(event)" style="display:flex;flex-direction:column;gap:16px">
+            <div>
+              <label style="display:block;margin-bottom:6px;color:#cbd5e1;font-size:13px;font-weight:500">Kullanıcı Adı veya ID</label>
+              <input id="login-input" type="text" placeholder="Ece veya U5" required style="width:100%;padding:10px 12px;border:1px solid #475569;border-radius:6px;background:#0f172a;color:#e2e8f0;font-size:14px;box-sizing:border-box" />
+            </div>
+            <button type="submit" style="padding:10px;background:linear-gradient(90deg,#3b82f6,#8b5cf6);color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:14px;transition:0.2s">Giriş Yap</button>
+          </form>
+        </div>
+      </div>
+    `;
+}
+
+async function handleLogin(event) {
+    if (event) event.preventDefault();
+    const input = $('#login-input');
+    if (!input) return;
+    const value = input.value.trim();
+    if (!value) {
+        showToast('Lütfen kullanıcı adı girin', 'error');
+        return;
+    }
+
+    try {
+        const users = await api.getUsers();
+        const lower = value.toLowerCase();
+        const user = users.find(u =>
+            (u.name && u.name.toLowerCase() === lower) ||
+            (u.user_id && u.user_id.toLowerCase() === lower)
+        );
+
+        if (!user) {
+            showToast('Kullanıcı bulunamadı', 'error');
+            return;
+        }
+
+        currentUserId = user.user_id;
+        const avatarEl = document.querySelector('.navbar-profile .avatar');
+        if (avatarEl) avatarEl.textContent = (user.name|| user.user_id).charAt(0).toUpperCase();
+
+        showToast(`Giriş yapıldı: ${user.name}`, 'success');
+        navigate('dashboard');
+    } catch (err) {
+        showToast(`Hata: ${err.message}`, 'error');
+    }
+}
+
+function handleLogout() {
+    currentUserId = null;
+    const avatarEl = document.querySelector('.navbar-profile .avatar');
+    if (avatarEl) avatarEl.textContent = 'A';
+    showToast('Oturumunuz kapatıldı', 'success');
+    navigate('login');
+}
 
 /* ── Dashboard ────────────────────────────── */
 async function renderDashboard() {
@@ -138,56 +206,63 @@ async function renderDashboard() {
   container.innerHTML = `<div class="loading"><div class="spinner"></div>Loading dashboard…</div>`;
 
   try {
-    const [users, states, leaderboard, awards] = await Promise.all([
+    const [users, states, leaderboard] = await Promise.all([
       api.getUsers(),
       api.getUserStates(),
-      api.getLeaderboard(5),
-      api.getAwards(50),
+      api.getLeaderboard(100),
     ]);
+
+    const awards = currentUserId
+      ? await api.getUserAwards(currentUserId, 200)
+      : await api.getAwards(100);
 
     // Merge user info with states
     const userMap = {};
     users.forEach(u => userMap[u.user_id] = u);
     states.forEach(s => s.name = userMap[s.user_id]?.name || s.user_id);
 
-    // Find a "current" user for the welcome banner (first on leaderboard)
-    const topUser = leaderboard[0];
-    const topState = states.find(s => s.user_id === topUser?.user_id) || states[0] || {};
-    const topName = userMap[topUser?.user_id]?.name || 'Oyuncu';
+    // Logged-in user context
+    const loggedInState = currentUserId ? states.find(s => s.user_id === currentUserId) : null;
+    const loggedInLb = currentUserId ? leaderboard.find(l => l.user_id === currentUserId) : null;
+    const loggedInUser = currentUserId ? userMap[currentUserId] : null;
+
+    const effectiveState = loggedInState || {};
+    const effectiveRank = loggedInLb?.rank ?? '—';
+    const effectiveName = loggedInUser?.name || currentUserId || 'Oyuncu';
 
     // Stats summary
     const totalQuests = awards.length;
-    const bestStreak = Math.max(...states.map(s => s.login_streak_days || 0), 0);
+    const bestStreak = effectiveState.login_streak_days || 0;
 
     container.innerHTML = `
       <div class="welcome-banner" style="animation: slideUp 0.5s ease">
-        <h2>Welcome back, <span class="welcome-name">${topName}</span> 🎮</h2>
-        <p>Your quest journey continues. Complete quests, earn points, and climb the leaderboard!</p>
+        <h2>Hoş geldin, <span class="welcome-name">${effectiveName}</span> 🎮</h2>
+        <p>Görevlerini tamamla, puan kazan ve lider sıralamasına çık!</p>
       </div>
 
       <div class="stats-grid">
         <div class="stat-card" style="animation: slideUp 0.5s ease 0.1s both">
           <div class="stat-icon">🏆</div>
-          <div class="stat-value">${topState.total_points || 0}</div>
-          <div class="stat-label">Top Points</div>
-          <div class="stat-bar" style="width: ${Math.min(100, (topState.total_points || 0) / 15)}%"></div>
+          <div class="stat-value">${effectiveState.total_points || 0}</div>
+          <div class="stat-label">Senin Puanın</div>
+          <div class="stat-bar" style="width: ${Math.min(100, (effectiveState.total_points || 0) / 15)}%"></div>
         </div>
         <div class="stat-card" style="animation: slideUp 0.5s ease 0.2s both">
           <div class="stat-icon">📊</div>
-          <div class="stat-value">#${topUser?.rank || '—'}</div>
-          <div class="stat-label">Top Rank</div>
-          <div class="stat-bar" style="width: ${Math.min(100, ((6 - (topUser?.rank || 5)) / 5) * 100)}%"></div>
+          <div class="stat-value">#${effectiveRank}</div>
+          <div class="stat-label">Sıralaman</div>
+          <div class="stat-bar" style="width: ${Math.min(100, ((6 - (effectiveRank || 5)) / 5) * 100)}%"></div>
         </div>
         <div class="stat-card" style="animation: slideUp 0.5s ease 0.3s both">
           <div class="stat-icon">⚔️</div>
           <div class="stat-value">${totalQuests}</div>
-          <div class="stat-label">Quest Awards</div>
+          <div class="stat-label">Görev Ödülü</div>
           <div class="stat-bar" style="width: ${Math.min(100, totalQuests * 10)}%"></div>
         </div>
         <div class="stat-card" style="animation: slideUp 0.5s ease 0.4s both">
           <div class="stat-icon">🔥</div>
           <div class="stat-value">${bestStreak}</div>
-          <div class="stat-label">Best Streak</div>
+          <div class="stat-label">Giriş Serisi</div>
           <div class="stat-bar" style="width: ${Math.min(100, bestStreak * 15)}%"></div>
         </div>
       </div>

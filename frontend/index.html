@@ -47,8 +47,7 @@
     <div class="navbar-profile">
       <div class="avatar">A</div>
       <div class="profile-dropdown">
-        <a href="#">⚙️ Settings</a>
-        <a href="#">🚪 Logout</a>
+        <a href="#" onclick="handleLogout();return false;">🚪 Logout</a>
       </div>
     </div>
   </nav>
@@ -56,8 +55,13 @@
   <!-- ═══ Main Content ═══ -->
   <main class="main-content">
 
+    <!-- Login -->
+    <section id="section-login" class="section active">
+      <div class="loading"><div class="spinner"></div>Loading…</div>
+    </section>
+
     <!-- Dashboard -->
-    <section id="section-dashboard" class="section active">
+    <section id="section-dashboard" class="section">
       <div class="loading">
         <div class="spinner"></div>Loading dashboard…
       </div>
