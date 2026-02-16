@@ -421,7 +421,7 @@ async function renderQuests() {
     quests.forEach((q, i) => {
       const typeCls = typeLabelMap[q.quest_type] || 'system';
       const isActive = q.is_active;
-      const earnBtnDisabled = !currentUserId;
+      const earnBtnDisabled = !currentUserId || !isActive;
       cardsHTML += `
         <div class="quest-card" style="animation: slideUp 0.4s ease ${0.08 * i}s both">
           ${isActive ? '<div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--blue-400),var(--yellow-500))"></div>' : ''}
@@ -438,10 +438,17 @@ async function renderQuests() {
             <span class="quest-priority">Priority: ${q.priority}</span>
           </div>
           <button 
-            class="btn btn-sm" 
-            style="width:100%;margin-top:12px;opacity:${earnBtnDisabled ? 0.5 : 1};pointer-events:${earnBtnDisabled ? 'none' : 'auto'}"
-            onclick="handleEarnQuest('${q.quest_id}', '${q.quest_name}', ${q.reward_points || 0})"
-            title="${earnBtnDisabled ? 'Login required' : 'Earn this quest'}"
+            class="btn btn-sm"
+            ${earnBtnDisabled ? 'disabled' : ''}
+            style="width:100%;margin-top:12px;opacity:${earnBtnDisabled ? 0.5 : 1};cursor:${earnBtnDisabled ? 'not-allowed' : 'pointer'}"
+            onclick="${earnBtnDisabled ? '' : `handleEarnQuest('${q.quest_id}', '${q.quest_name}', ${q.reward_points || 0})`}"
+            title="${
+              !currentUserId 
+                ? 'Login required' 
+                : !isActive 
+                  ? 'Quest is inactive' 
+                  : 'Earn this quest'
+            }"
           >
             💰 Earn
           </button>
@@ -478,19 +485,48 @@ async function handleEarnQuest(questId, questName, rewardPoints) {
   }
 
   try {
+    // Prevent double click spam
+    const btns = document.querySelectorAll(`button[onclick*="${questId}"]`);
+    btns.forEach(b => b.disabled = true);
+
+    // Fetch latest quest state (important!)
+    const quests = await api.getQuests(false);
+    const quest = quests.find(q => q.quest_id === questId);
+
+    if (!quest) {
+      showToast('Quest not found', 'error');
+      return;
+    }
+
+    if (!quest.is_active) {
+      showToast('This quest is inactive', 'error');
+      return;
+    }
+
     const res = await api.earnQuest(currentUserId, questId);
-    
+
     if (res.status === 'success') {
       showToast(`🎉 ${questName} earned! +${rewardPoints} pts`, 'success');
-      // Refresh dashboard to show updated points/badges
+
+      // Refresh dashboard & quests
       renderDashboard();
+      renderQuests();
+
     } else {
-      showToast(`❌ ${res.message}`, 'error');
+      showToast(`❌ ${res.message || 'Quest could not be earned'}`, 'error');
     }
+
   } catch (err) {
     showToast(`Earn failed: ${err.message}`, 'error');
+  } finally {
+    // Re-enable buttons after short delay
+    setTimeout(() => {
+      const btns = document.querySelectorAll(`button[onclick*="${questId}"]`);
+      btns.forEach(b => b.disabled = false);
+    }, 800);
   }
 }
+
 
 /* ── Rewards (Badges) ─────────────────────── */
 async function renderRewards() {
